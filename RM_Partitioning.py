@@ -24,6 +24,7 @@ T = []
 C = []
 U = []
 task_id = []
+
 def truncate(f, n):
     return math.floor(f * 10 ** n) / 10 ** n
 
@@ -36,7 +37,7 @@ def read_data():
     global hp
     global tasks
 
-    n = int(input("\n \t\tEnter number of tasks:"))
+    n = int(input("\n\t\tEnter number of tasks:"))
     #  Storing data in a dictionary
     for i in range(n):
         tasks[i] = {}
@@ -46,6 +47,7 @@ def read_data():
         print("Enter the WCET of task C",i,":")
         w = input()
         tasks[i]["WCET"] = int(w)
+        
     # Writing the dictionary into a JSON file
     with open('tasks.json','w') as outfile:
         json.dump(tasks,outfile,indent = 4)
@@ -55,16 +57,16 @@ def hyper_period():
     """
     Calculates the hyper period of the tasks to be scheduled
     """
-    temp = []
+    next_fit_U = []
     for i in range(n):
-        temp.append(tasks[i]["Period"])
-    HP = temp[0]
-    for i in temp[1:]:
+        next_fit_U.append(tasks[i]["Period"])
+    HP = next_fit_U[0]
+    for i in next_fit_U[1:]:
         HP = HP*i//gcd(HP, i)
     print ("\n hyperperiod:",HP)
     return HP
 
-def sort_task():
+def sort_task_period():
     """
     The task sets are sorted in the increasing order of their Periods.
     """
@@ -109,59 +111,57 @@ def plot_graph():
     # for percentage in y axis
     ax.yaxis.set_major_formatter(mtick.PercentFormatter())
     for i in range(n):
-
         plt.bar(x[i], x_axis[i], color = colors[i])
-
     plt.xticks(x, x_axis)
     # show the result
     plt.show()
 
 def next_fit(tasks):
-    sort_task()
-    #  initially task 1 is allocated to processor 1 
+    # Initially task 1 is allocated to processor 1 
     processor_id = 1
     Util_factor = 0
-    temp = []
-
+    next_fit_U = []
+    next_fit_Proc = []
     # Starts partitioning based on next fit
-
-    for i in range(len(task_id)):   
+    for i in range(len(task_id)):  
+        flag = 0 
         # sum of each utilization factor
         if U[i] <= 1:
             # processor.append(task_id)
             Util_factor = Util_factor + U[i]
             
-            if Util_factor < sched_factor:
+            if Util_factor <= sched_factor:
                 print("same processor")
-                temp.append(Util_factor)
-
+                next_fit_Proc.append(task)
             else:
                 Util_factor = U[i]
-                temp.append(Util_factor)
                 processor_id = processor_id + 1
-                # processor.append(task_id)
                 print("processor change")
+        
+    next_fit_U.append(Util_factor)            
+
 
     if processor_id >= n:
         processor_id = n
             
     print("\nUtilization factor",U)
-    print("\nTemp Util factor",temp)
+    print("\nTemp Util factor",next_fit_U)
     print("\nNumber of tasks:", n)
     print("\nNumber of Processors used:",processor_id)
-    # for task_id in tasks.keys():
     # plot_graph()
 
-def first_fit():
+def first_fit(tasks):
     pass
-
 def best_fit():
     pass
 
 if __name__ == '__main__':
 
     TASKS = read_data()
+    # Sorting of tasks in the increasing order of Period
+    sort_task_period()
     next_fit(TASKS)
+    # first_fit(TASKS)
     hp = hyper_period()
     
 
