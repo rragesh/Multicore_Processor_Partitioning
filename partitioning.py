@@ -59,7 +59,7 @@ def read_data():
 	tasks = sorted(tasks, key=lambda tasks:tasks.period)
 	for i in range(n):
 		print("-----------------")
-		print("TASK  %d"%i)
+		print("TASK  %d"%(i+1))
 		print("-----------------")
 		print("Period     ",tasks[i].period)
 		print("WCET       ",tasks[i].WCET)
@@ -82,18 +82,20 @@ def NEXT_FIT():
 	c = 1       #initial core count
 	cores = []  #instance list of core class
 	core_rem = sched_factor
+	core_buff = []
 
 	for i in range(n):
 		if(tasks[i].U > core_rem):   #task does not fit into same core
 			c = c + 1                #add new core  
 			core_rem = sched_factor - tasks[i].U    #calculate rem capacity
+			core_rem = truncate(core_rem,2)
 			cores.append(core(c, sched_factor, core_rem))                                    
 			# print("\tcore change", core_rem)
 		else:
 			core_rem = core_rem - tasks[i].U #task run on same core
+			core_rem = truncate(core_rem,2)
 			cores.append(core(c, sched_factor, core_rem)) 
-			# print("\tsame core",core_rem)
-		
+			# print("\tsame core",core_rem)	
 	if(c>m):
 			m = c
 	#prints resultant data
@@ -105,29 +107,52 @@ def NEXT_FIT():
 		print("\tcore rem capacity ",cores[i].core_rem_U)
 		print("------------------------")
 	print("\n\tNumber of processors used for NEXT FIT",m)
-	  
-
+	
+	# Metrics are calculated here
+	for i in range(len(cores)):
+		core_buff.append(truncate(cores[i].core_U - cores[i].core_rem_U,2)) 
+	
+	core_buff.sort()
+	print("Utilization factor of cores		  ", core_buff)
+	print("Maximum Utilization factor of cores", core_buff[0])
+	print("Minimum Utilization factor of cores", core_buff[-1])
 
 def FIRST_FIT():
 	m = 1
 	c = 1
 	cores = []
 	core_rem = sched_factor
-
+	
 	for i in range(n):
+
 		if(tasks[i].U > core_rem):   #task does not fit into same core
-			c = c + 1                #add new core 
-			core_rem = sched_factor - tasks[i].U 
-			cores.append(core(c, sched_factor, core_rem))                                     #task added to next core
-			print("\tcore change", core_rem)
-		else:
-			core_rem = core_rem - tasks[i].U   #task run on same core
+			c = c + 1                #add new core  
+			core_rem = sched_factor - tasks[i].U    #calculate rem capacity
+			core_rem = truncate(core_rem,2)
 			cores.append(core(c, sched_factor, core_rem)) 
-			print("\tsame core",core_rem)
-		
-	if(c>m):
+			print("\tcore change", core_rem)
+			# for j in range(len(cores)):
+
+			# 	if(tasks[i].U > cores[j].core_rem_U):
+			# 		c = c+1
+			# 		core_rem = sched_factor-tasks[i].U
+			# 		cores.append(core(m, sched_factor, core_rem)) 
+			# 		print(tasks[i].U,"\tchange core inside",core_rem)
+			# 		core_rem = sched_factor
+			# 	else:
+			# 		core_rem = cores[j].core_rem_U - tasks[i].U
+			# 		core_rem = truncate(core_rem,2)
+			# 		cores.append(core(j, sched_factor, core_rem)) 
+			# 		print(tasks[i].U,"\tsame core inside",core_rem)
+		else:   #task does not fit into same core
+			core_rem = core_rem - tasks[i].U   #task run on same core
+			core_rem = truncate(core_rem,2)
+			cores.append(core(m, sched_factor, core_rem)) 
+			print(tasks[i].U, "\tsame core",core_rem)
+
+		if(c>m):
 			m = c
- 
+	
 	for i in range(len(cores)):
 		print("------------------------")
 		print("\nCORE  %d"%cores[i].core_id)
@@ -144,4 +169,4 @@ if __name__ == '__main__':
 	hp = hyperperiod()
 	schedulability()
 	NEXT_FIT()
-	FIRST_FIT()
+	# FIRST_FIT()
