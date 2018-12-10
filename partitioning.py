@@ -13,18 +13,20 @@ import math
 import numpy as np
 # Data structure to store the task sets
 class task:
-	def __init__(self,task_id=None, period=None, WCET=None, U=None, core_ID=[]):
+	def __init__(self,task_id=None, period=None, WCET=None, U=None):
 		self.task_id = task_id
 		self.period = period
 		self.WCET = WCET
 		self.U = U
-		self.core_ID = core_ID
+	
 # Data structure to store the processor data
 class core:
-	def __init__(self,core_id = None,core_U = None,core_rem_U = None):
+	def __init__(self,core_id=None,core_U=None,core_rem_U=None, task_ID=None,task_U=None):
 		self.core_id = core_id
 		self.core_U = core_U
 		self.core_rem_U = core_rem_U
+		self.task_ID =	task_ID
+		self.task_U = task_U
 
 
 def truncate(f, n):
@@ -76,82 +78,69 @@ def schedulability():
 	# to limit only 2 decimal places without rounding off
 	sched_factor = truncate(sched_fac, 2)
 	print("\tsched_factor", sched_factor)
-
+ 
 
 def NEXT_FIT():
 	# 'n' tasks and 'm' processors
-	m = 1       #core counter
-	c = 1       #initial core count
-	cores = []  #instance list of core class
+	m = 1      				#core counter
+	c = 1                   #initial core count
+	cores = []              #instance list of core class
 	core_rem = sched_factor #Store remaining U factor of core
-	core_buff = []           #Store the utilization of cores
-	merged_cores = []  
-
+	core_buff = []          #Store the utilization of cores
+	merged_cores = []       #Store the non-duplicate cores
+	id_list = []			#Stores id list of cores
+	id_merged = []			#Stores id list of merged cores
 	for i in range(n):
 		# if a task cannot fit into same core
 		if(tasks[i].U > core_rem):   #task does not fit into same core
 			c = c + 1                #task i is added to a new core 
 			core_rem = sched_factor - tasks[i].U    #calculate rem capacity
 			core_rem = truncate(core_rem,2)
-			cores.append(core(c, sched_factor, core_rem)) 
+			cores.append(core(c, sched_factor, core_rem,i,tasks[i].U)) 
 		 # If a task fit into a same core 
 		else:
 			core_rem = core_rem - tasks[i].U #task run on same core
 			core_rem = truncate(core_rem,2)
-			cores.append(core(c, sched_factor, core_rem)) 
+			cores.append(core(c, sched_factor, core_rem,i,tasks[i].U)) 
 	# if there are no new cores added then default value = 1
 	if(c>m):
 			m = c
 	# sorting the processors based on core_id
 	cores = sorted(cores, key=lambda cores:cores.core_id )
 	for i in range(len(cores)):
+		id_list.append(cores[i].core_id)
 		print("------------------------")
 		print("\nCORE  %d"%cores[i].core_id)
 		print("\tcore number       ",cores[i].core_id)
 		print("\tcore load capacity",cores[i].core_U)
-		print("\tcore rem capacity ",cores[i].core_rem_U) 
+		print("\tcore rem capacity ",cores[i].core_rem_U)
+		print("\tTask in core      ",cores[i].task_ID) 
+		print("\tTask Utilization  ",cores[i].task_U) 
 		print("------------------------")
 	# Metrics are calculated here
 	# Inorder to remove the multiple instances of core with same core_id they are merged
-	for i in range(len(cores)-1):
-		core_len = len(cores)
-		# To merge the last object of the cores
-		if i+1 == core_len-1:
-			if merged_cores[len(merged_cores)-1].core_id == cores[i+1].core_id:
-				merged_cores.pop()
-				merged_cores.append(cores[i+1])
-			else:
-				merged_cores.append(cores[i+1])	
-		# To merge the  cores having same core_id into a single instance 
-		else:
-			# If the core_id of two successive instances are same then second instance is merged
-			if cores[i].core_id == cores[i+1].core_id:
-				merged_cores.append(cores[i+1])	
-			else:
-				# 
-				if merged_cores[len(merged_cores)-1].core_id == cores[i].core_id :
-					merged_cores.pop()
-					merged_cores.append(cores[i])
-				elif merged_cores[len(merged_cores)-1].core_id != cores[i].core_id:
-					merged_cores.append(cores[i])
-
+	# Check the next index in the id_list. If an element is not equal to the element in the 
+	# next index, it is the last duplicate
+	id_merged = [i for i, x in enumerate(id_list) if i == len(id_list) - 1 or x != id_list[i + 1]]
+	for i in id_merged:
+		merged_cores.append(cores[i])
+	
 	print("\n\tNumber of processors used for NEXT FIT",m)
 	for i in range(len(merged_cores)):
 		print("\n------------------------")
 		print("\nCORE  %d"%merged_cores[i].core_id)
 		print("\tcore number       ",merged_cores[i].core_id)
-		print("\tcore load capacity",merged_cores[i].core_U)
-		print("\tcore rem capacity ",merged_cores[i].core_rem_U)
+		print("\tcore total load   ",merged_cores[i].core_U - merged_cores[i].core_rem_U)
+		print("\tcore remaing U    ",merged_cores[i].core_rem_U)
 		print("------------------------")
-	
-	# Display of metrics
-	for i in range(len(merged_cores)):
+
+	# Display of main metrics
+	for i in range(len(merged_cores)): #truncate the utilization value
 		core_buff.append(truncate(merged_cores[i].core_U - merged_cores[i].core_rem_U,2)) 
-	core_buff.sort()
+	core_buff.sort() #sorting the U list for finding max and min values
 	print("Utilization factor of cores		  ", core_buff)
 	print("Maximum Utilization factor of cores", core_buff[-1])
 	print("Minimum Utilization factor of cores", core_buff[0])
-
 
 def FIRST_FIT():
 	# 'n' tasks and 'm' processors
@@ -160,32 +149,36 @@ def FIRST_FIT():
 	cores = []  #instance list of core class
 	core_rem = sched_factor #Store remaining U factor of core
 	merged_cores = []  
-
+	cores.append(core(1,sched_factor,sched_factor,0,0))
 	for i in range(n):
-		# if a task cannot fit into same core
-		if(tasks[i].U > core_rem):   #task does not fit into same core
-			c = c + 1                #task i is added to a new core 
-			core_rem = sched_factor - tasks[i].U    #calculate rem capacity
-			core_rem = truncate(core_rem,2)
-			cores.append(core(c, sched_factor, core_rem)) 
-		 # If a task fit into a same core 
-		else:
-			core_rem = core_rem - tasks[i].U #task run on same core
-			core_rem = truncate(core_rem,2)
-			cores.append(core(c, sched_factor, core_rem)) 
-	# if there are no new cores added then default value = 1
-	if(c>m):
-			m = c
+		for j in range(c):
+			# if a task  fit into same core
+			if(tasks[i].U < core_rem):   #task does not fit into same core
+				core_rem = core_rem - tasks[i].U #task run on same core
+				core_rem = truncate(core_rem,2)
+				cores.append(core(c, sched_factor, core_rem,i,tasks[i].U))				 
+			else:
+				c = c + 1                #task i is added to a new core 
+				core_rem = sched_factor - tasks[i].U    #calculate rem capacity
+				core_rem = truncate(core_rem,2)
+				cores.append(core(c, sched_factor, core_rem,i,tasks[i].U))
+
+		# if there are no new cores added then default value = 1
+		if(c>m):
+				m = c
+	cores.pop(0)
 	# sorting the processors based on core_id
 	cores = sorted(cores, key=lambda cores:cores.core_id )
-	
+	# Display the result
 	for i in range(len(cores)):
-		print("------------------------")
+		print("--------------------------------")
 		print("\nCORE  %d"%cores[i].core_id)
 		print("\tcore number       ",cores[i].core_id)
 		print("\tcore load capacity",cores[i].core_U)
-		print("\tcore rem capacity ",cores[i].core_rem_U) 
-		print("------------------------")
+		print("\tcore rem capacity ",cores[i].core_rem_U)
+		print("\tTask in core      ",cores[i].task_ID) 
+		print("\tTask Utilization  ",cores[i].task_U) 
+		print("--------------------------------")
 	print("\n\tNumber of processors used for FIRST FIT",m)
   
 	
