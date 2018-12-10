@@ -83,6 +83,7 @@ def NEXT_FIT():
 	cores = []  #instance list of core class
 	core_rem = sched_factor
 	core_buff = []
+	merged_cores = [] 
 
 	for i in range(n):
 		if(tasks[i].U > core_rem):   #task does not fit into same core
@@ -98,6 +99,8 @@ def NEXT_FIT():
 			# print("\tsame core",core_rem)	
 	if(c>m):
 			m = c
+	# sorting the processors based on core_id
+	cores = sorted(cores, key=lambda cores:cores.core_id )
 	#prints resultant data
 	for i in range(len(cores)):
 		print("------------------------")
@@ -109,13 +112,47 @@ def NEXT_FIT():
 	print("\n\tNumber of processors used for NEXT FIT",m)
 	
 	# Metrics are calculated here
-	for i in range(len(cores)):
-		core_buff.append(truncate(cores[i].core_U - cores[i].core_rem_U,2)) 
+	for i in range(len(cores)-1):
+		core_len = len(cores)
+		# To merge the last object of the cores
+		if i+1 == core_len-1:
+			if merged_cores[-1].core_id == cores[i+1].core_id:
+				merged_cores.pop()
+				merged_cores.append(cores[i+1])
+			else:
+				merged_cores.append(cores[i+1])	
+		# To merge the  cores having same core_id into a single instance 
+		else:
+			# If the core_id of two successive instances are same then second instance is merged
+			if cores[i].core_id == cores[i+1].core_id:
+				merged_cores.append(cores[i+1])	
+
+			else:
+				# 
+				if merged_cores[-1].core_id == cores[i].core_id :
+					merged_cores.pop()
+					merged_cores.append(cores[i])
+				elif merged_cores[-1].core_id != cores[i].core_id:
+					merged_cores.append(cores[i])
+
+
+	for i in range(len(merged_cores)):
+		print("------------------------")
+		print("\nCORE  %d"%merged_cores[i].core_id)
+		print("\tcore number       ",merged_cores[i].core_id)
+		print("\tcore load capacity",merged_cores[i].core_U)
+		print("\tcore rem capacity ",merged_cores[i].core_rem_U)
+		print("------------------------")
+
+
+
+	# for i in range(len(cores)):
+	# 	core_buff.append(truncate(cores[i].core_U - cores[i].core_rem_U,2)) 
 	
-	core_buff.sort()
-	print("Utilization factor of cores		  ", core_buff)
-	print("Maximum Utilization factor of cores", core_buff[0])
-	print("Minimum Utilization factor of cores", core_buff[-1])
+	# core_buff.sort()
+	# print("Utilization factor of cores		  ", core_buff)
+	# print("Maximum Utilization factor of cores", core_buff[0])
+	# print("Minimum Utilization factor of cores", core_buff[-1])
 
 def FIRST_FIT():
 	m = 1
