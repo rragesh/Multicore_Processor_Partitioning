@@ -7,10 +7,12 @@
 import json
 import copy
 import operator
+import random
 from sys import *
 from math import gcd
 import math
 import numpy as np
+
 # Data structure to store the task sets
 class task:
 	def __init__(self,task_id=None, period=None, WCET=None, U=None):
@@ -41,6 +43,35 @@ def hyperperiod():
 		HP = HP*i//gcd(HP, i)
 	print ("\n\tHyperperiod:",HP)
 	return HP
+
+def random_data():
+	global n     # Number of tasks to be partitioned
+	global tasks # List that stores the instances of tasks
+	tasks = []
+	random.seed()
+	n = random.randrange(2,7)
+	print("number of tasks",n)
+
+	for i in range(n):    
+		task_id = i
+		period = random.randrange(9,20)
+		WCET = random.randrange(4,8)
+		u =  WCET/period
+		# Limit U by 2 decimal places without rounding off
+		U = truncate(u,2)
+		tasks.append(task(task_id,period,WCET,U))
+
+	# Tasks are sorted based on their period and displayed
+	tasks = sorted(tasks, key=lambda tasks:tasks.period)
+	for i in range(n):
+		print("-----------------")
+		print("TASK  %d"%(i+1))
+		print("-----------------")
+		print("Period     ",tasks[i].period)
+		print("WCET       ",tasks[i].WCET)
+		print("Utilization",tasks[i].U)
+		print("-----------------")
+		print("\n\n")
 
 def read_data():
 	global n     # Number of tasks to be partitioned
@@ -162,7 +193,6 @@ def FIRST_FIT():
 				core_rem = sched_factor - tasks[i].U    #calculate rem capacity
 				core_rem = truncate(core_rem,2)
 				cores.append(core(c, sched_factor, core_rem,i,tasks[i].U))
-
 		# if there are no new cores added then default value = 1
 		if(c>m):
 				m = c
@@ -181,11 +211,14 @@ def FIRST_FIT():
 		print("--------------------------------")
 	print("\n\tNumber of processors used for FIRST FIT",m)
   
-	
+def BEST_FIT():
+	pass	
 
 if __name__ == '__main__':
-	read_data()
-	hp = hyperperiod()
+	random_data()
+	# read_data()
+	# hp = hyperperiod()
 	schedulability()
 	NEXT_FIT()
 	# FIRST_FIT()
+	# BEST_FIT()
