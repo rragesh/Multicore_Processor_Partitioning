@@ -1,5 +1,5 @@
 
-#Partitioning Strategies using Rate Monotonic Scheduling
+# Partitioning Strategies using Rate Monotonic Scheduling
 
 Simulating the behaviour of several partitioning strategies in periodic tasks with their deadlines equal to their periods. Each processor is scheduled using Rate Monotonic Scheduler.The program will be composed of the following parts:
 * **Data acquisition**:The user will specify the number of tasks and for each task, its WCET and period. We will assume that the task set is synchronous to time zero.
