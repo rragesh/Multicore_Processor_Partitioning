@@ -30,7 +30,6 @@ class core:
 		self.task_ID =	task_ID
 		self.task_U = task_U
 
-
 def truncate(f, n):
 	return math.floor(f * 10 ** n) / 10 ** n
 
